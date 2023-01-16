@@ -1,0 +1,36 @@
+# compositor - background process + disable shadowing effects during session
+picom -CGb &
+
+# notifications
+/usr/bin/dunst &
+
+# panel - taskbar, system tray, battery, clock
+tint2 &
+
+# network manager
+nm-applet &
+
+# Autostart
+dex -a -s /etc/xdg/autostart/:~/.config/autostart/ &
+
+# Set display from arandr saved script
+sh ~/.screenlayout/monitor.sh &
+
+## Launch Polybar
+# bash ~/.config/openbox/polybar/launch.sh
+
+# Polkit
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+
+# Wallpaper
+nitrogen --restore &
+
+# Low battery notifier
+~/.config/openbox/scripts/low_bat_notifier.sh &
+
+## Enable Conky 
+bash ~/.config/conky/Eltanin/start.sh
+
+# Add this to your .xinitrc or whatever file starts programs on startup.
+# -R restores the last colorscheme that was in use.
+wal -R
