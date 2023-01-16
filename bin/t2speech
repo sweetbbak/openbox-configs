@@ -1,0 +1,48 @@
+#!/bin/bash
+
+base_url="https://readloud.net/"
+
+function usage()
+{
+    cat<<EOF
+Return text from a text file read out as mp3, using $base_url.
+Usage:
+    $0 <in-file> <out-file>
+EOF
+}
+
+if [ -z "$1" ] || [ -z "$2" ]
+then
+    usage
+    exit 1
+fi
+
+tempfile=$(mktemp)
+in_file=$1
+out_file=$2
+
+# curl --output $tempfile \
+#     --data "but1=$(cat $in_file)" \
+#     --data "fruits=Amy" \
+#     --data "Submit+Query" \
+#     --data "butS=0" \
+#     --data "butP=0" \
+#     --data "butPauses=0" \
+#     $base_url
+
+curl --output $tempfile 'https://readloud.net/' -X POST -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0' \
+-H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br'\
+-H 'Content-Type: application/x-www-form-urlencoded' -H 'Origin: https://readloud.net' -H 'Connection: keep-alive' -H 'Referer: https://readloud.net/' \
+-H 'Cookie: PHPSESSID=288e9703d0d9aad8e138fe5308548300' -H 'Upgrade-Insecure-Requests: 1' -H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' \
+-H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-User: ?1' \
+--data-raw 'but1=this+is+a+test%21%0D%0A+++%0D%0A+++%0D%0A+++%0D%0A+++&fruits=Amy&but=Submit+Query&butS=0&butP=0&butPauses=0'
+
+mp3_location=$(grep "<a href=\"/tmp/" $tempfile | sed "s/<a href/\\n<a href/g" | sed 's/\"/\"><\/a>\n/2'| grep "href=\"/tmp/"|sed -e 's/<a .*href=['"'"'"]//' -e 's/["'"'"'].*$//' -e '/^$/ d')
+echo $mp3_location
+curl --output $out_file "https://readloud.net${mp3_location}"
+
+curl 'https://readloud.net/tmp/this_is_a_test____808.mp3' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0' \
+-H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' \
+-H 'Accept-Encoding: gzip, deflate, br' -H 'Connection: keep-alive' -H 'Referer: https://readloud.net/' -H 'Cookie: PHPSESSID=288e9703d0d9aad8e138fe5308548300'\ 
+-H 'Upgrade-Insecure-Requests: 1' \
+-H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-User: ?1' -H 'TE: trailers' \

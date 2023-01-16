@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Feed this script a link and it will give dmenu
+# some choice programs to use to open it.
+feed="$(xclip -o)"
+
+case "$(printf "row yt-dlp\\naudio yt-dlp\\nlow yt-dlp\\nhigh yt-dlp\\nDownload\\nmpv" | rofi -dmenu -i -p "Open it with?")" in
+	"mpv")setsid -f mpv -quiet "$feed" >/dev/null 2>&1 ;;
+	"row yt-dlp") st -e yt-dlp --no-playlist -o "$HOME/Data/movie/yt/%(title)s.%(ext)s" "$feed";;
+	"low yt-dlp") st -e yt-dlp --no-playlist -i -f 18 -o "$HOME/Data/movie/yt/%(title)s.%(ext)s" "$feed">/dev/null 2>&1 ;;
+	"high yt-dlp") st -e yt-dlp --no-playlist -i -f 22 -o "$HOME/Data/movie/yt/%(title)s.%(ext)s" "$feed" >/dev/null 2>&1 ;;
+	"audio yt-dlp") st -e yt-dlp --no-playlist -f bestaudio --embed-metadata --restrict-filenames -o "$HOME/Data/movie/yt/%(title)s.%(ext)s" "$feed" ;;
+	"Download") st -e axel "$feed" >/dev/null 2>&1 ;;
+esac

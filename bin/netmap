@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# NETWORK=192.168.1.0/24
+NETWORK=10.0.0.0/16
+
+echo "Mapping $NETWORK..."
+
+out=$(sudo nmap -sP $NETWORK | tail -n +2 | head -n -1)
+read a <<<$out
+while read ip; do
+	read latency
+	read MAC
+	ip=${ip#"Nmap scan report for "} 
+	latency=${latency#"Host is up ("}
+	latency=${latency%" latency)."}
+	MAC=${MAC#"MAC Address: "}
+	echo -e "$ip\t| $MAC $latency"
+done <<<$out

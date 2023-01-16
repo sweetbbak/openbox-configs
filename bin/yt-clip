@@ -1,0 +1,8 @@
+#!/bin/bash
+
+INPUT=$(gum input --placeholder "Video URL" --prompt.foreground 240)
+TIME=$(gum input --placeholder "input time in seconds " --prompt.foreground 240)
+RUNTIME=$(gum input --placeholder "Enter how many seconds to download: " --prompt.foreground 240)
+echo -n "Input = " "$INPUT" "$TIME"
+
+gum spin --title "Downloading clip..." -- yt-dlp -f "(bestvideo+bestaudio/best)[protocol!*=dash]" --external-downloader ffmpeg --external-downloader-args "ffmpeg_i:-ss $TIME -t $RUNTIME" "$INPUT"

@@ -1,0 +1,56 @@
+#!/bin/sh
+
+down () {
+	notify-send "$3 links fetched.." -r $tmp
+	choice=$(printf "download\nwatch\nnext mirror" | bemenu --fn 'Roboto 15' -p "??" -i -c -W 0.6 -B 3 -l 10)
+	[ "$choice" = "watch" ] && setsid -f mpv --referrer="$1" "$2" --force-media-title="$url" && notify-send -i "$icon_dir/apps/mpv.svg" "opening $url" -r $tmp && exit 0
+	[ "$choice" = "next mirror" ] && return 0
+	notify-send -i "$icon_dir/panel/jdownloader-indicator.svg" "Downloading $url" -r $tmp
+	case $2 in
+	    *m3u*)
+		    $TERMINAL -e ffmpeg -loglevel error -stats -referer "$1" -user_agent "$agent" -i "$2" -c copy "$url.mp4" && notify-send "Episode Downloaded $url" -r $tmp || (notify-send -u "critical" "Downloading failed $url" -r $tmp && exit 0);;
+	    *)
+		    $TERMINAL -e aria2c -U "$agent" --check-certificate=false --summary-interval=0 -x 16 -s 16 --referer="$1" "$2" -o "$url.mp4" --download-result=hide && notify-send "Episode Downloaded $url" -r $tmp || (notify-send -u "critical" "Downloading failed $url" -r $tmp && exit 0);;
+	esac
+	exit 0
+}
+
+run () {
+	curl -s "$base_url?page=1" -A "$agent" | sed -nE 's_.*<a href="/videos/([^"]*)">_\1_p' &
+	curl -s "$base_url?page=2" -A "$agent" | sed -nE 's_.*<a href="/videos/([^"]*)">_\1_p' &
+}
+
+icon_dir="/usr/share/icons/Papirus/16x16"
+base_url="https://gogohd.net"
+agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
+trap "exit 0" INT HUP
+tmp=$(notify-send "Parsing $base_url.. Please wait..." -t 1500 -p)
+[ -z "$*" ] && url=$(run | bemenu --fn 'Roboto 15' -i -c -W 0.6 -B 3 -l 20 -p "Select Anime: ") || url=$*
+[ -z "$url" ] && notify-send -u "critical" "No anime selected" -r $tmp && exit 0 || notify-send "Loading Episode $url.." -r $tmp
+refr=$(curl -A "$agent" -s "$base_url/videos/$url" | sed -nE 's/.*iframe src="(.*)" al.*/\1/p')
+notify-send "Fetching Embed links" -r $tmp
+resp="$(curl -A "$agent" -s "https:$refr" | sed -nE 's/.*data-status="1".*data-video="(.*)">.*/\1/p')"
+
+notify-send "Fetching mp4upload links" -r $tmp
+mp4up_link=$(printf "$resp" | grep "mp4upload")
+[ -z "$mp4up_link" ] || mp4up_video=$(curl -A "$agent" -s "$mp4up_link" -H "DNT: 1" --connect-timeout=10 | sed -nE 's_.*embed\|(.*)\|.*blank.*\|(.*)\|(.*)\|(.*)\|(.*)\|src.*_https://\1.mp4upload.com:\5/d/\4/\3.\2_p')
+[ -z "$mp4up_video" ] || down "$mp4up_link" "$mp4up_video" "mp4upload"
+
+notify-send "Fetching doodstream links" -r $tmp
+dood_id=$(printf "$resp" | sed -n "s_.*dood.*/e/__p")
+[ -z "$dood_id" ] || dood_link=$(curl --cipher AES256-SHA256 --tls-max 1.2 -s -A "$agent" "https://dood.ws/e/$dood_id" | sed -nE ".*(/pass_md5[^']*)',.*|\1|p")
+[ -z "$dood_link" ] || dood_video="$(curl --cipher AES256-SHA256 --tls-max 1.2 -s -A "$agent" "https://dood.ws${dood_link}" -e "https://dood.ws/e/$dood_id")"
+[ -z "$dood_video" ] || down "https://dood.ws/d/$dood_id" "${dood_video}doodstream?token=$(printf "%s" "$dood_link" | cut -d "/" -f4)&expiry=$(date +'%s%3N')" "doodstream"
+
+notify-send "Fetching xstreamcdn links" -r $tmp
+fb_id=$(printf "$resp" | sed -n "s_.*fembed.*/v/__p")
+[ -z "$fb_id" ] || fb_video=$(curl -A "$agent" -s -X POST "https://fembed-hd.com/api/source/$fb_id" -H "x-requested-with:XMLHttpRequest" | sed -e 's/\\//g' -e 's/.*data"://' | tr "}" "\n" | sed -nE 's/.*file":"(.*)","label.*/\1/p' | tail -1)
+[ -z "$fb_video" ] || down "https://fembed-hd.com/v/$fb_id" "$fb_video" "xstreamcdn"
+
+id=$(printf "%s" "$refr" | sed -nE 's/.*id=(.*)&title.*/\1/p')
+
+notify-send "Fetching animixplay links" -r $tmp
+[ -z "$id" ] || ani_video="$(curl -s "https://animixplay.to/api/live$(printf "%sLTXs3GrU8we9O%s" "$id" "$(printf "$id" | base64)" | base64)" -A "$agent" -I | sed -nE 's_location: (.*)_\1_p' | cut -d"#" -f2 | base64 -d)"
+[ -z "$ani_video" ] || down "https://animixplay.to" "$ani_video" "animixplay"
+
+notify-send -u critical "no more mirror links..sorry" -r $tmp && exit 0

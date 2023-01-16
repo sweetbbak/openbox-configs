@@ -1,0 +1,26 @@
+#!/bin/bash
+
+INPUT=$(gum input --placeholder "Video URL" --prompt.foreground 240)
+TIME=$(gum input --placeholder "input time in seconds " --prompt.foreground 240)
+RUNTIME=$(gum input --placeholder "Enter how many seconds to download: " --prompt.foreground 240)
+CONV=$(gum choose "Convert to gif?" yes no)
+
+gum spin --title "Downloading clip..." -- yt-dlp -f "(bestvideo+bestaudio/best)[protocol!*=dash]" --external-downloader ffmpeg --external-downloader-args "ffmpeg_i:-ss $TIME -t $RUNTIME" "$INPUT"
+
+function convertit () {
+INPUT=$(gum filter --placeholder "Input file")
+FRAMERATE=$(gum input --prompt "Frame rate: " --placeholder "Frame Rate" --prompt.foreground 240 --value "50")
+WIDTH=$(gum input --prompt "Width: " --placeholder "Width" --prompt.foreground 240 --value "1200")
+MAXCOLORS=$(gum input --prompt "Max Colors: " --placeholder "Max Colors" --prompt.foreground 240 --value "256")
+
+BASENAME=$(basename "$INPUT")
+BASENAME="${BASENAME%%.*}"
+
+gum spin --title "Converting to GIF" -- ffmpeg -i "$INPUT" -vf "fps=$FRAMERATE,scale=$WIDTH:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=$MAXCOLORS[p];[s1][p]paletteuse" "$BASENAME.gif"
+  
+}
+
+if [[ $CONV = "yes" ]]
+  then
+    convertit
+fi

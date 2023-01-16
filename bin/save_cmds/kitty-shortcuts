@@ -1,0 +1,39 @@
+------------------------------------------------------------------
+---[Scrolling]---
+-Action-			-----------Shortcut-
+Line up				----------ctrl+shift+up (also ⌥+⌘+⇞ and ⌘+↑ on macOS)
+Line down			----------ctrl+shift+down (also ⌥+⌘+⇟ and ⌘+↓ on macOS)
+Page up				----------ctrl+shift+page_up (also ⌘+⇞ on macOS)
+Page down			----------ctrl+shift+page_down (also ⌘+⇟ on macOS)
+Top					----------ctrl+shift+home (also ⌘+↖ on macOS)
+Bottom				----------ctrl+shift+end (also ⌘+↘ on macOS)
+Prev shell prompt	----------ctrl+shift+z (see Shell integration)
+Next prmpt			----------ctrl+shift+x (see Shell integration)
+Browse scorllback   ----------ctrl+shift+h
+Browse last	    	----------ctrl+shift+g (see Shell integration)
+command out
+-------------------------------------------------------------------
+--[Tabs]--
+New tab				----------ctrl+shift+t
+Close tab			----------ctrl+shift+q
+Next tab			----------ctrl+shift+right
+Previous tab		----------ctrl+shift+left
+Next layout			----------ctrl+shift+l
+Move tab forward	----------ctrl+shift+.
+Move tab backward	----------ctrl+shift+,
+Set tab title		----------ctrl+shift+alt+t
+------------------------------------------------------------------
+--[windows]--
+New window			----------ctrl+shift+enter
+New OS window		----------ctrl+shift+n
+Close window		----------ctrl+shift+w
+Next window			----------ctrl+shift+]
+Previous window		----------ctrl+shift+[
+Move window forward ----------ctrl+shift+f
+Move window			----------ctrl+shift+b
+backward
+Move window to top  ----------ctrl+shift+`
+focus 				----------ctrl+shift+f7
+swap window			----------ctrl+shift+f8
+Focus specific 		----------ctrl+shift+1, ctrl+shift+2 … ctrl+shift+0
+------------------------------------------------------------------

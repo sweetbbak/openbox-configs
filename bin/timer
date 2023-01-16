@@ -1,0 +1,39 @@
+#!/bin/bash
+
+usage() {
+	printf "Examples:\n\t${0##*/} 10s\n\t${0##*/} 3m\n" 
+}
+
+term() {
+	rm $FILE
+	notify-send -i ~/.dotfiles/share/icons/timer.png "Timer" "Timer terminated"
+	exit 10
+}
+
+FILE=/tmp/timer
+
+trap 'term' TERM
+
+[[ -f $FILE ]] && echo Timer already running && exit 2
+[[ $# -ne 1 ]] && usage && exit 1
+[[ ! $1 =~ ^[0-9]+[sm]{1}$ ]] && usage && exit 1
+
+val=${1%?}	# remove last char from string
+
+case ${1: -1} in
+	m)
+		timeout=$((val * 60)) ;;
+	s)
+		timeout=$val ;;
+	*)
+		echo "This shoudn't happen" && exit 99 ;;
+esac
+
+now=$(date +%s)
+echo $((now+timeout)) > $FILE
+
+sleep $timeout &
+wait $!
+
+rm $FILE
+notify-send -i ~/.dotfiles/share/icons/timer.png "Timer" "Time is up!"

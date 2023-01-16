@@ -1,0 +1,9 @@
+#!/bin/sh
+
+tmp=$(notify-send -t 2000 "Parsing SubsPlease RSS... Please Wait..." -p)
+data=$(curl -s "https://subsplease.org/rss/?r=1080" | sed 's/<item>/\n/g')
+name=$(printf "%s" "$data" | sed -nE 's_^.*Please\] (.*)</title>.*size>(.*)</subs.*_(\2) > \1_p' | bemenu --fn 'Roboto 16' -i -c -W 0.6 -B 3 -l 25 -p "Search anime:")
+[ -z "$name" ] && notify-send -u critical "Err.. Query empty" -r $tmp && exit 0
+id=$(printf "$name" | sed -nE 's/.*\[(.*)\].*/\1/p')
+magnet=$(printf "%s" "$data" | sed -nE "s_.*<link>(.*$id.*)</link>.*_\1_p" | sed 's/amp;//g')
+setsid -f $TERMINAL -e $HOME/repos_scripts/torrent "$magnet"

@@ -1,0 +1,9 @@
+#-----[yt-dlp]------#
+yt-dlp sections --download-sections "*93-111" (in seconds)
+--force-keyframes-at-cuts
+
+Example using seconds:
+yt-dlp -f "(bestvideo+bestaudio/best)[protocol!*=dash]" --external-downloader ffmpeg --external-downloader-args "ffmpeg_i:-ss 3263 -t 11" "https://www.youtube.com/watch?v=S9HdPi9Ikhk"Example using second"
+
+Example using timestamp:
+yt-dlp -f "(bestvideo+bestaudio/best)[protocol!*=dash]" --external-downloader ffmpeg --external-downloader-args "ffmpeg_i:-ss 00:54:23.00 -t 00:00:11.00" "https://www.youtube.com/watch?v=S9HdPi9Ikhk"

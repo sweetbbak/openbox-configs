@@ -1,0 +1,6 @@
+#-----[curl]------#
+
+curl https://static.novelpub.com/bookcover/300x400/01238-the-authors-pov.jpg | icat --align left && curl -s https://www.novelpub.com/novel/the-authors-pov-13121923 | htmlq --text .summary
+# gets a novel summary and its image and spits out out to the cli (wip)
+
+

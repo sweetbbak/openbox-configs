@@ -1,0 +1,1 @@
+echo "$(grep -v '^#' ~/bin/save_cmds/ffmpeg | rofi -dmenu -i -l 20 | cut -d' ' -f1)" | xclip -selection clipboard 

@@ -1,0 +1,25 @@
+#!/bin/bash
+# export EPOCH=$(date +"%Y-%A%-B-%d.%H%M")
+# cat >speech.txt <<EOF
+# beep
+# you're listening to radio eleven and this is the voice of aqua q.  it is currently
+# $(date +"%A %B %d and %H:%M")
+# and you are
+# EOF
+
+# uri=$(curl -s -X POST http://www.fromtexttospeech.com/ -H "Content-Type: application/x-www-form-urlencoded" --data-urlencode "input_text@speech.txt" -d "language=US%20English&voice=IVONA%20Kimberly22&speed=0&action=process_text&create_audio_file=1"|grep file=/output/|cut -d\' -f2|cut -d= -f2|grep output)
+# wget "http://www.fromtexttospeech.com/${uri}" -O id-${EPOCH}.mp3 
+# ffmpeg -d -re -i "id-${EPOCH}.mp3" -i bg.mp3 -filter_complex amix=inputs=2:dropout_transition=2 -vn -c:a mp3 -b:a 128k -f mp3 -t 20 -|~/bin/aux.pl
+
+#ffmpeg -i INPUT1 -i INPUT2 -i INPUT3 -filter_complex amix=inputs=3:duration=first:dropout_transition=3 OUTPUT
+
+
+input_text=whats+up%3F+How+are+you+doing%3F&language=British+English&voice=IVONA+Amy22+%28UK+English%29&speed=0&action=process_text
+
+
+url=$(curl 'http://fromtexttospeech.com/' -X POST -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0'\
+  -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' \
+  -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate' \
+  -H 'Content-Type: application/x-www-form-urlencoded' -H 'Origin: http://fromtexttospeech.com' -H 'Connection: keep-alive' -H 'Referer: http://fromtexttospeech.com/' -H 'Upgrade-Insecure-Requests: 1' --data-raw 'input_text=whats+up%3F+How+are+you+doing%3F&language=British+English&voice=IVONA+Amy22+%28UK+English%29&speed=0&action=process_text')
+
+wget "http://www.fromtexttospeech.com/${url}" -O zz-test.mp3

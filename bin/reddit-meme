@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+
+url="https://libreddit.demonkingswarn1.repl.co"
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}"
+
+get_memes() {
+	memes=$(curl -s "$url/r/$subreddit" | grep -Eo "img\/[a-zA-Z0-9?%-]*.[a-z]{3}" | uniq)
+	echo "$memes" >> "$cache_dir/urls.txt"
+}
+
+rm -f "$cache_dir/urls.txt"
+
+[ -z "$*" ] && printf "%s" "Search: " && read -r subreddit || subreddit="$*"
+subreddit=$(printf "%s\n" "$subreddit" | sed 's/ //g')
+
+get_memes
+
+choice=$(cat "$cache_dir/urls.txt" | fzf)
+
+nsxiv-url "$url/$choice"

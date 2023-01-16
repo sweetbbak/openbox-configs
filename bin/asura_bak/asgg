@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# use pygum and pysoup... pygum takes a manwha link and returns a list of images. pygum lists home page and lets you choose a chapter to read
+# Implement search aura.gg and return valid manhwa name
+get_input() {
+  [ -z "$*" ] && query=$(gum input --placeholder "Search for a manhwa") || query=$*
+  query=$(curl -sL -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "https://asurascans.com/?s=${query}")
+}
+
+get_page() {
+  return
+}
+
+front_page() {
+  option=$(python ~/src/asura_bak/pysoup.py | cut -d"+" -f1 | gum filter)
+  sanitize=$(echo "$option" |tr " " "-" | sed 's/[A-Z]/\L&/g' | sed "s/[#%,.*'@:\$]//g")
+  ch=$(gum choose {1..100})
+  chapter=$(printf "https://asura.gg/${sanitize}-chapter-${ch}/")
+  list=$(printf "$chapter" | ~/src/asura_bak/pygum.py) 
+
+  pixcat resize -w 1280 -h 640 -W 5120 -H 2560 --align center --relative-x -2 $(cat results.csv|tr "," "\n")
+
+}
+
+list_images() {
+  pixcat resize -w 6400 -h 3200 -W 51200 -H 25600 --align center --relative-x -2 "$(cat "$1")"
+}
+
+cleanup() {
+  tput cnorm && exit 0
+}
+
+# get_input "$@"
+# call pygum.py using stdin and the valid url
+front_page
+#printf "%s" "$chapter"
+#get_page "$chapter"
+#list_images "$x"

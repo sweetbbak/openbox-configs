@@ -1,0 +1,31 @@
+#!/bin/sh
+# DOESNT WORK WITHOUT MODIFICATION DONT RUN
+notify-send "Initiating wallpaper changing process" -r 2
+old="C01D41"
+oldimg="/home/tanveer/wall/018.png"
+img=$(nsxiv -t ~/wall/ -o)
+[ -z "$img" ] && notify-send "Process aborted !!" -u critical -r 2 && exit 0
+
+notify-send "Extracting Accent color.." -r 2
+accent=$(convert $img +dither -scale 25% -colors 10 -unique-colors txt: | tail -2 | head -1 | sed -nE 's/.* #([^ ]*).*/\1/p' | cut -c1-6)
+
+[ -z "$accent" ] && exit 0
+notify-send "Setting wallpaper.." -r 2
+xwallpaper --stretch "$img" &
+notify-send "Tweaking system.." -r 2
+bspc config focused_border_color "#$accent"
+notify-send "making changes permanent.." -r 2
+sed -i "s/$old/$accent/g" $HOME/.config/dunst/dunstrc
+sed -i "s/$old/$accent/g" $HOME/.config/bspwm/bspwmrc
+sed -i "s/$old/$accent/g" $HOME/.config/sxhkd/sxhkdrc
+sed -i "s/$old/$accent/g" $HOME/repos_scripts/setwall
+doas sed -i "s/$old/$accent/g" /usr/share/themes/Materia-dark-compact/gtk-3.0/gtk.css
+doas sed -i "s/$old/$accent/g" /usr/share/themes/Materia-dark-compact/gtk-2.0/gtkrc
+sed -i "s_${oldimg}_${img}_g" $HOME/.config/bspwm/bspwmrc
+sed -i "s_${oldimg}_${img}_g" $HOME/repos_scripts/setwall
+killall dunst
+pkill -USR1 -x sxhkd
+notify-send "generating terminal colorscheme.." -r 2
+$HOME/coolterm/run -t 'xres' "$img"
+xrdb -merge -I$HOME ~/.Xresources
+notify-send "Everything Done!!" -r 2

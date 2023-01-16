@@ -1,0 +1,2 @@
+#check if file exists
+[ -f "$1" ] || cmd to exec if file doesnt exist (can also use &&)

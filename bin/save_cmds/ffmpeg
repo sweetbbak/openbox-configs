@@ -1,0 +1,11 @@
+#-----[ffmpeg]------#
+# both make a gif
+ffmpeg -i who.webm -vf "fps=10,scale=320:-1:flags=lanczos" -c:v pam \
+	-ss 00:01:05  -t 00:00:05.0 \
+    -f image2pipe - | \
+    convert -delay 10 - -loop 0 -layers optimize output2.gif
+
+ffmpeg -i output.webm -vf "fps=10,scale=540:-1:flags=lanczos" -c:v pam \
+	-ss 1 \
+	-f image2pipe - | \
+ 	convert -delay 0 -  -loop 0 -layers optimize whoo.gif

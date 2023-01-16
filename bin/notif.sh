@@ -1,0 +1,4 @@
+printf '\x1b]99;;bussy is ready\x1b\\'
+
+printf '\x1b]99;i=1:d=0;Hello world\x1b\\'
+printf '\x1b]99;i=1:d=1:p=body;This is cool\x1b\\'

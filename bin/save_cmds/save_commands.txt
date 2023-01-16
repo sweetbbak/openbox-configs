@@ -1,0 +1,24 @@
+curl https://static.novelpub.com/bookcover/300x400/01238-the-authors-pov.jpg | icat --align left && curl -s https://www.novelpub.com/novel/the-authors-pov-13121923 | htmlq --text .summary
+# gets a novel summary and its image and spits out out to the cli (wip)
+
+#-----[ffmpeg]------
+# both make a gif
+ffmpeg -i who.webm -vf "fps=10,scale=320:-1:flags=lanczos" -c:v pam \
+	-ss 00:01:05  -t 00:00:05.0 \
+    -f image2pipe - | \
+    convert -delay 10 - -loop 0 -layers optimize output2.gif
+
+ffmpeg -i output.webm -vf "fps=10,scale=540:-1:flags=lanczos" -c:v pam \
+	-ss 1 \
+	-f image2pipe - | \
+ 	convert -delay 0 -  -loop 0 -layers optimize whoo.gif
+
+#-----[yt-dlp]-------
+yt-dlp sections --download-sections "*93-111" (in seconds)
+--force-keyframes-at-cuts
+
+Example using seconds:
+yt-dlp -f "(bestvideo+bestaudio/best)[protocol!*=dash]" --external-downloader ffmpeg --external-downloader-args "ffmpeg_i:-ss 3263 -t 11" "https://www.youtube.com/watch?v=S9HdPi9Ikhk"Example using second"
+
+Example using timestamp:
+yt-dlp -f "(bestvideo+bestaudio/best)[protocol!*=dash]" --external-downloader ffmpeg --external-downloader-args "ffmpeg_i:-ss 00:54:23.00 -t 00:00:11.00" "https://www.youtube.com/watch?v=S9HdPi9Ikhk"

@@ -1,0 +1,169 @@
+#!/bin/sh
+
+help(){
+	case $1 in
+		search*)
+			name="search_play"
+			args='"search_query"'
+			description="this function first searches the $args, then opens the menu(fzf,[d|be]menu,[t|r|w]ofi) with the results,then calls the play function to play the music"
+			;;
+		play)
+			name="play"
+			args='"valid_youtube_url_or_id"'
+			description="immediately plays the $args in mpv(audio only)"
+			;;
+		loop)
+			name="loop"
+			args='"print"'
+			description="this function runs in a loop to play the next music if the current music is successfully finished
+			this function should be put as background process or put it in startup
+			passing print argument will show the progress to stdout"
+			;;
+		play*)
+			name="play_next"
+			args='"menu"'
+			description="immediately plays the next song stored in $logdir/next file in mpv if argument is empty
+			passing $args argument will show the $args(fzf,[d|be]menu,[t|r|w]ofi) for selecting what should be played"
+			;;
+		*)
+			name="[ <function_name> ]"
+			args="[ <function_arg> ]"
+			description="
+			<function_name>	<function_arg>	<function_description>
+
+			search_play	search_query	searches first then plays the music in mpv
+			play		youtube_url	plays the music in mpv
+			play_next	menu(optional)	plays the next music in $logdir/next file
+			loop		print(optional)	plays the next music after the current is finished (run it as background process)
+
+			tip:
+			type ${0##*/} help <function_name> to get individual help
+			"
+	esac
+	while read -r line; do
+		printf "%s\n" "$line"
+	done <<-EOF
+
+	Usage : ${0##*/} $name $args
+
+	Description : $description
+	EOF
+	exit 0
+}
+
+get_data(){
+    curl -X POST -A "$agent" -s "$base_url/youtubei/v1/$1?key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30&prettyPrint=false" -H "content-type:application/json" -H "x-youtube-client-name:67" -H "x-youtube-client-version:1.20221128.01.00" -d "$2" -b "$cookie" -e "$base_url/$3"
+}
+
+loop(){
+	#this function does exactly what it says, it should run in the background, u can even put this in startup
+	#it plays next song after the current song get played completely,it does nothing until u run the search_play function then this script kicks in
+	#call it by script-name "loop" "print" for printing the remaining time in terminal
+	#call it by script-name "loop" for anonymously
+	while true;do
+		sleep 4
+		pos=$(echo '{ "command": ["get_property", "time-remaining"]}' | socat - /tmp/mpvsocket | sed -nE 's_.*data":([^\.]*).*_\1_p')
+		while [ -n "$pos" ];do
+			pos=$(echo '{ "command": ["get_property", "time-remaining"]}' | socat - /tmp/mpvsocket | sed -nE 's_.*data":([^\.]*).*_\1_p')
+			[ -z "$1" ] || printf "\033[2K\rnext music in $pos second(s)%s" "$(echo '{ "command": ["get_property", "pause"]}' | socat - /tmp/mpvsocket | sed -nE 's_.*data":([^,]*).*_\1_p' | sh && printf " (paused)")"
+			[ -z "$pos" ] && printf "\033[2K\r\n"
+			sleep 2
+		done
+		pos=$(echo '{ "command": ["get_property", "time-remaining"]}' | socat - /tmp/mpvsocket | sed -nE 's_.*data":([^\.]*).*_\1_p')
+		[ -z "$pos" ] && pgrep -f "mpvsocket" > /dev/null && play "$(cat "$logdir/next" | head -1 | cut -f2)" "$1"
+	done
+}
+
+play(){
+	#this function does all the heavy lifting of extracting url from given videoId
+	#it's also callable, u can use this function to play ur custom youtube URLs
+	#call it by script-name "play" "valid_youtube_id_or_url"
+	id=$(printf "%s" "$1" | cut -d"=" -f2 | cut -d"/" -f4 | cut -d'&' -f1)
+	[ -z "$id" ] && printf "[ youtube ] Invalid link\n" && exit 1
+
+	#get song's audio url
+	random_no=$(head /dev/urandom | tr -dc '0-2' | cut -c1)
+	droid_agent="com.google.android.youtube/17.46.37 (Linux; U; Android 1$random_no) gzip"
+	json="{
+	  \"context\": {
+	    \"client\": {
+	      \"clientName\": \"ANDROID\",
+	      \"clientVersion\": \"17.46.37\",
+	      \"androidSdkVersion\": $((random_no + 29)),
+	      \"userAgent\": \"$droid_agent\",
+	      \"hl\": \"en\",
+	      \"timeZone\": \"UTC\",
+	      \"utcOffsetMinutes\": 0
+	    }
+	  },
+	  \"videoId\": \"$id\",
+	  \"params\": \"8AEB\",
+	  \"playbackContext\": {
+	    \"contentPlaybackContext\": {
+	      \"html5Preference\": \"HTML5_PREF_WANTS\"
+	    }
+	  },
+	  \"contentCheckOk\": true,
+	  \"racyCheckOk\": true
+	}"
+	
+	data=$(curl -X POST -A "$droid_agent" -s "https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w&prettyPrint=false" -H "content-type:application/json" -H "x-youtube-client-name:21" -H "x-youtube-client-version:17.46.37" -d "$json" -b "$cookie" | sed -nE 's_.*itag":251,"url":"([^"]*)".*"title":"([^"]*)".*_\1\n\2_p')
+	title=$(printf "%s" "$data" | tail -1)
+	audio_url=$(printf "%s" "$data" | head -1)
+	if [ -n "$2" ];then
+		printf "Name >> %s\n" "$title"
+		printf "videoID >> %s\n" "$id"
+		printf "Audio URL >> %s\n" "$audio_url"
+	fi
+	
+	curl -s "https://i.ytimg.com/vi/$id/hqdefault.jpg" -o "$logdir/default.jpg" && notify-send -i "$logdir/default.jpg" "Now Playing" "$title" -t 5000
+	pgrep -f "mpvsocket" > /dev/null || (setsid -f mpv --really-quiet --input-ipc-server=/tmp/mpvsocket --idle --quiet >/dev/null && sleep 3)
+	echo "{ \"command\": [\"loadfile\", \"$audio_url\", \"replace\"] }" | socat - /tmp/mpvsocket
+	cut -d'>' -f2 $logdir/current > $logdir/prev
+	prev_id=$(cat $logdir/prev)
+	printf "currently playing : %s >%s\n" "$title" "$id" > "$logdir/current"
+
+	#next songs data
+	json_next="{
+	\"enablePersistentPlaylistPanel\": true,
+	\"tunerSettingValue\": \"AUTOMIX_SETTING_NORMAL\",
+	\"playlistId\": \"RDAMVM$id\",
+	\"isAudioOnly\": true,
+	\"context\": $(cat $logdir/context)
+	}"
+	get_data "next" "$json_next" | sed 's/playlistPanelVideoRenderer/\n/g' | sed -nE 's_.*text":"(.*)"}.*longBylineText":\{"runs":\[\{"text":"([^"]*)","navigationEndpoint.*videoId":"([^"]*)".*_\1 - \2\t\3_p' | sed "/$id/d;/$prev_id/d" > "$next_data" & >/dev/null
+}
+
+search_play(){
+	#run this if u r starting the script first time like this
+	#call this by "script-name" "search_play" "search_query"
+	[ -z "$1" ] && query=$(:| bemenu --fn 'Roboto 15' -i -B 3 -p "Yt-music [search]: ") || query="$1"
+	[ -z "$query" ] && notify-send "Err.. Search query empty" -u critical && exit 1
+	curl -A "$agent" -s "$base_url/" -c "$cookie" | sed -nE 's|.*INNERTUBE_CONTEXT":(.*),"INNERTUBE_CONTEXT_CLIENT_NAME.*|\1|p' > $logdir/context
+
+	json_search="{
+	\"context\" : $(cat $logdir/context),
+	\"query\": \"$query\",
+	\"params\": \"EgWKAQIIAWoKEAMQBBAJEAoQBQ%3D%3D\"
+	}"
+	res=$(get_data "search" "$json_search" "search?q=$(printf "$1" | tr ' ' '+')" | sed 's/watchEndpoint"/\n/g' | sed -nE 's_.*videoId":"([^"]*)",.*label":"Play ([^"]*)".*_\2\t\1_p' | bemenu --fn 'Roboto 15' -i -c -W 0.5 -B 3 -p "Play: " -l 30 | cut -f2)
+	[ -z "$res" ] || play "$res" "verbose"
+}
+
+play_next(){
+	#call this by script-name "play_next" for playing next song immediately
+	#or add "menu" after "play_next" to show menu for selecting and playing next song immediately
+	#like this script-namr "play_next" "menu"
+	[ -z "$1" ] && play "$(cat "$logdir/next" | head -1 | cut -f2)" "verbose" || play "$(cat $logdir/{current,next} | bemenu --fn 'Roboto 15' -i -c -W 0.5 -B 3 -p "play: " -l 30 | cut -f2)" "verbose"
+}
+
+logdir="${XDG_CACHE_HOME:-$HOME/.cache/yt-music}"
+base_url="https://music.youtube.com"
+[ -d "$logdir" ] || mkdir "$logdir"
+cookie="$logdir/cookies"
+next_data="$logdir/next"
+agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
+
+#call this script by script-name "function_name" "query"
+[ -z "$1" ] && help
+$1 "$2" "$3"

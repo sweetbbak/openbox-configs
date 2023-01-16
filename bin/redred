@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# curl -s -A "uwu" "https://gateway.reddit.com/desktopapi/v1/subreddits/unixporn"|tr "\[|\]" "\n"|sed -nE "s@.*\"media\": \{.*\"content\": \"([^\"]*)\",.*@\1@p" 
+
+get_input() {
+  [ -z "$*" ] && query=$(gum input --placeholder "Search for a subreddit") || query=$*
+  query=$(printf "%s" "$query"|tr ' ' '+')
+  subreddit=$(curl -sL "https://www.reddit.com/search/?q=${query}&type=sr"|tr "<" "\n"|
+    sed -nE 's@.*class="_2torGbn_fNOMbGw3UAasPl">r/([^<]*)@\1@p'|gum filter)
+    curl -s -A "uwu" "https://gateway.reddit.com/desktopapi/v1/subreddits/$subreddit"|tr "\[|\]" "\n"|sed -nE "s@.*\"media\": \{.*\"content\": \"([^\"]*)\",.*@\1@p" 
+
+}
+
+ get_input "$@"

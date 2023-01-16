@@ -1,0 +1,24 @@
+#!/bin/bash
+gum style --border normal --margin "1" --padding "1 2" --border-foreground 212 "HLPR $(gum style --foreground 212 'easy command finder & helper')"
+echo -n "what do you need help with?"
+printf "\n"
+sleep 0.5
+CHOICE=$(gum choose "View cmds" "Edit cmds" "Create group" "Delete group")
+
+if [[ $CHOICE = "Edit cmds" ]]; then
+    (nvim ~/bin/save_cmds)
+
+elif [[ $CHOICE = "View cmds" ]]; then
+    
+    FILES=$(cd ~/bin/save_cmds || return; gum filter --placeholder "Choose a file")
+    bat -f ~/bin/save_cmds/"$FILES"
+
+elif [[ $CHOICE = "Create group" ]]; then
+    DIRN=$(gum input --placeholder "Enter cmd group name")
+    [ -f ~/bin/save_cmds/$DIRN ] || hx ~/bin/save_cmds/$DIRN
+
+elif [[ $CHOICE = "Delete group" ]]; then
+    FILES=$(cd ~/bin/save_cmds || return; gum filter --placeholder "Choose a file to DELETE")
+    gum confirm "do you want to delete?" && rm -f ~/bin/save_cmds/"$FILES"
+    
+fi

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+[ -z "$*" ] && query=$(printf "" | bemenu --fn 'Roboto 15' -i -c -W 0.6 -B 3 -p "Search torrent: ") || query=$*
+[ -z "$query" ] && exit 0
+magnet=$(curl -s "https://thepiratebay0.org/search/$query" | tr '\n' ' ' | sed -e 's_<div_\n_g;s_</tr>_\n_g;s_&nbsp\;__g' | sed -nE 's_.*title.*">([^<]*).*a href="(magnet[^"]*)".*Size ([^,]*).*">([^<]*)<.*<.*_\[size:\3,se:\4\]\t\1\t\2_p' | fzf -d'\t' --with-nth ..2 | cut -f3)
+[ -z "$magnet" ] || setsid -f $TERMINAL -e $HOME/repos_scripts/torrent "$magnet"

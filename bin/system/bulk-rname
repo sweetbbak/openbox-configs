@@ -1,0 +1,10 @@
+#!/bin/bash
+
+extension=$(gum input --placeholder=".txt" --prompt="file extension: ")
+new_extension=$(gum input --placeholder=".text" --prompt="new file extension: ")
+
+for file in *"$extension"; do
+    mv -- "$file" "${file%"$extension"}${new_extension}"
+done
+
+# for f in *.txt; do mv -- "$f" "${f%.txt}.text"; done

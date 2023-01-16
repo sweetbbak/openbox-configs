@@ -1,0 +1,25 @@
+#!/bin/sh
+#this script uses the piratesbay api to search for torrents
+
+cal_size() {
+    printf "%.03f\n" "$(($1/1000))e-6"
+}
+
+display() {
+    for i in $(seq $(printf "%s\nlol" "$2" | wc -l));do
+	printf "[%s GB;S:%s\n" "$(cal_size "$(printf "%s" "$1" | sed -n "${i}p")")" "$(printf "%s" "$2" | sed -n "${i}p")" & done
+    wait
+}
+
+[ -z "$*" ] && query=$(printf "" | bemenu --fn 'Roboto 15' -i -c -W 0.6 -B 3 -p "Search torrent: ") || query=$*
+[ -z "$query" ] && exit 0
+tmp=$(notify-send "Searching query" -p)
+query=$(printf "%s" "$query" | tr " " "+")
+data=$(curl -s "https://apibay.org/q.php?q=$query" | sed 's/},/}\n/g' | tr -d "[|]")
+notify-send "tidying up data" -r $tmp
+size=$(printf "%s" "$data" | sed -nE 's/.*name.*size":"(.*)",.*user.*/\1/p')
+name_seed=$(printf "%s" "$data" | sed -nE 's/.*name":"(.*)","info_hash.*seeders":"(.*)",.*num.*/\2] \1/p')
+sel=$(display "$size" "$name_seed" | bemenu --fn 'Roboto 15' -i -c -W 0.6 -B 3 -l 25 -p "select torrent >" | cut -d" " -f3-)
+[ -z "$sel" ] && notify-send -u critical "No Torrent Selected" -r $tmp && exit 0 || notify-send "Selected $sel" -r $tmp
+magnet="magnet:?xt=urn:btih:$(printf "%s" "$data" | sed -nE 's/.*name":"(.*)","info_hash":"(.*)",.*leech.*/\2\t\1/p' | sed -n "s/\t$sel//p")"
+setsid -f $TERMINAL -e $HOME/repos_scripts/torrent "$magnet"
